@@ -17,23 +17,80 @@ Angular provides the following types of guards:
 
 Determines whether a user can enter a specific route. Typically used for authentication and authorization.
 
+```ts
+export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
+  const authService = inject(AuthService);
+  return authService.isAuthenticated();
+};
+```
+
 ## CanActivateChild
 
 Determines whether a user can access any of the nested child routes under a parent route. Typically used to protect all nested routes of a parent instead of attaching a guard to each child route.
+
+```ts
+export const adminChildGuard: CanActivateChildFn = (
+  childRoute: ActivatedRouteSnapshot,
+  state: RouterStateSnapshot,
+) => {
+  const authService = inject(AuthService);
+  return authService.hasRole("admin");
+};
+```
 
 ## CanDeactivate
 
 Checks whether a user can leave a route. Typically used to prevent data loss on dirty forms.
 
+```ts
+export const unsavedChangesGuard: CanDeactivateFn<Form> = (
+  component: Form,
+  currentRoute: ActivatedRouteSnapshot,
+  currentState: RouterStateSnapshot,
+  nextState: RouterStateSnapshot,
+) => {
+  return component.hasUnsavedChanges()
+    ? confirm("You have unsaved changes. Are you sure you want to leave?")
+    : true;
+};
+```
+
 ## CanMatch
 
 Determines whether a route can be matched during path matching. Unlike other guards, if it return false, Angular skips that route entry and continues checking the next route definition with the same path.
 
+```ts
+export const featureToggleGuard: CanMatchFn = (
+  route: Route,
+  segments: UrlSegment[],
+  currentSnapshot: PartialMatchRouteSnapshot,
+) => {
+  const featureService = inject(FeatureService);
+  return featureService.isFeatureEnabled("newDashboard");
+};
+```
+
+```ts
+const routes: Routes = [
+  {
+    path: "dashboard",
+    component: AdminDashboard,
+    canMatch: [adminGuard],
+  },
+  {
+    path: "dashboard",
+    component: UserDashboard,
+    canMatch: [userGuard],
+  },
+];
+```
+
+In this example, if the `adminGuard` returns `false`, Angular will skip that route entry and continue checking the next route definition with the same path. If the `userGuard` returns `false`, Angular will skip that route entry as well, and the navigation will fail.
+
 # UrlTree and Redirect Command
 
-`UrlTree` is a tree-like structure representing a URL path. That is, its fragments, query params, segments, etc.
-
-RedirectCommand is a wrapper around `UrlTree` that extends its capabilities, allowing to define **how** to perform the navigation (e.g., replaceUrl, skipLocationChange, etc.)
+- `UrlTree` is a tree-like structure representing a URL path. That is, its fragments, query params, segments, etc.
+- `RedirectCommand` is a wrapper around `UrlTree` that extends its capabilities, allowing to define **how** to perform the navigation (e.g., replaceUrl, skipLocationChange, etc.)
 
 ```ts
 class MyComponent {
